@@ -321,5 +321,42 @@
     "synthesized_at": "2026-03-02T03:06:58.509532"
   },
   "created_at": "2026-03-02T03:04:29.656860",
-  "updated_at": "2026-03-02T03:07:01.501191"
+  "updated_at": "2026-03-02T05:01:05.139248",
+  "triangulation": {
+    "total_sources": 0,
+    "unique_domains": 0,
+    "domains": [],
+    "sections": [
+      {
+        "title": "The Regulatory Trigger: AI Act Article 4",
+        "finding_count": 6,
+        "evidence_count": 3,
+        "triangulation_score": "strong"
+      },
+      {
+        "title": "Nordic Market Reality: High Adoption, Low Readiness",
+        "finding_count": 7,
+        "evidence_count": 3,
+        "triangulation_score": "strong"
+      },
+      {
+        "title": "Competitive Landscape: Empty Field",
+        "finding_count": 7,
+        "evidence_count": 3,
+        "triangulation_score": "strong"
+      },
+      {
+        "title": "Market Size and Opportunity",
+        "finding_count": 7,
+        "evidence_count": 3,
+        "triangulation_score": "strong"
+      },
+      {
+        "title": "Strategic Positioning for HverdagsAI",
+        "finding_count": 6,
+        "evidence_count": 3,
+        "triangulation_score": "strong"
+      }
+    ]
+  }
 }

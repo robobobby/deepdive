@@ -518,6 +518,60 @@ def render_md(session: dict, output_dir: Path) -> str:
     return path
 
 
+def cmd_triangulate(args):
+    """Analyze source triangulation — how many independent sources confirm each finding."""
+    session = load_session(args.session)
+    s = session.get('synthesis')
+    if not s:
+        print("ERROR: No synthesis yet.", file=sys.stderr)
+        sys.exit(1)
+
+    # Collect all fetched content across iterations
+    all_content = []
+    for it in session['iterations']:
+        for sr in it.get('search_results', []):
+            for fc in sr.get('fetched_content', []):
+                all_content.append({
+                    'url': fc['url'],
+                    'title': fc.get('title', ''),
+                    'domain': fc['url'].split('/')[2] if '/' in fc['url'] else fc['url'],
+                })
+
+    # Extract unique domains
+    domains = list(set(c['domain'] for c in all_content))
+
+    # Build triangulation report
+    triangulation = {
+        'total_sources': len(all_content),
+        'unique_domains': len(domains),
+        'domains': domains,
+        'sections': [],
+    }
+
+    for sec in s.get('sections', []):
+        sec_tri = {
+            'title': sec.get('title', ''),
+            'finding_count': len(sec.get('findings', [])),
+            'evidence_count': len(sec.get('evidence', [])),
+            'triangulation_score': 'strong' if len(sec.get('evidence', [])) >= 3 else 'moderate' if len(sec.get('evidence', [])) >= 2 else 'weak',
+        }
+        triangulation['sections'].append(sec_tri)
+
+    # Save to session
+    session['triangulation'] = triangulation
+    save_session(args.session, session)
+
+    # Print report
+    print(f"Source Triangulation Report")
+    print(f"{'='*40}")
+    print(f"Total sources: {triangulation['total_sources']}")
+    print(f"Unique domains: {triangulation['unique_domains']}")
+    print()
+    for sec in triangulation['sections']:
+        icon = '🟢' if sec['triangulation_score'] == 'strong' else '🟡' if sec['triangulation_score'] == 'moderate' else '🔴'
+        print(f"  {icon} {sec['title']}: {sec['evidence_count']} evidence pieces ({sec['triangulation_score']})")
+
+
 def cmd_status(args):
     """Print session status."""
     session = load_session(args.session)
@@ -561,6 +615,9 @@ def main():
     p_render.add_argument('session', help='Session JSON file')
     p_render.add_argument('--format', choices=['html', 'md', 'both'], default='both')
 
+    p_tri = sub.add_parser('triangulate', help='Source triangulation analysis')
+    p_tri.add_argument('session', help='Session JSON file')
+
     p_status = sub.add_parser('status', help='Session status')
     p_status.add_argument('session', help='Session JSON file')
 
@@ -578,6 +635,8 @@ def main():
         cmd_synthesize(args)
     elif args.command == 'render':
         cmd_render(args)
+    elif args.command == 'triangulate':
+        cmd_triangulate(args)
     elif args.command == 'status':
         cmd_status(args)
     else:

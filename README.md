@@ -1,61 +1,84 @@
-# Deepdive — Research Agent
+# Deepdive v2 — SuperAgent Research Loop
 
-An autonomous research tool that produces structured, source-backed reports on any topic. Bobby (the AI agent) drives the reasoning; the scripts handle data gathering and rendering.
+Multi-step research tool: **plan → search → reflect → iterate → synthesize → render**.
 
-## Versions
+Inspired by [deer-flow](https://github.com/bytedance/deer-flow) (ByteDance). Bobby drives all reasoning; the script handles I/O.
 
-### v1 (`deepdive.py`) — Single-pass Research
-Simple: decompose → search → fetch → synthesize → render. Good for quick research.
+## Quick Start
 
-### v2 (`deepdive_v2.py`) — SuperAgent Research Loop
-Multi-step: **plan → search → reflect → iterate → synthesize → render**. Inspired by [deer-flow](https://github.com/bytedance/deer-flow) (ByteDance).
+```bash
+# 1. Initialize
+python3 deepdive_v2.py init "Your research question" --max-iterations 3
 
-Key features:
-- **Iterative research loops** — searches, reflects on gaps, generates follow-up queries
-- **Confidence-based stopping** — continues iterating until confidence ≥ 0.8 or max iterations reached
-- **URL deduplication** — never re-fetches pages across iterations
-- **State machine** — JSON session files allow pause/resume across sessions
-- **Rich rendering** — HTML (dark theme) + Markdown with research methodology trail
+# 2. Plan (Bobby decides sub-queries)
+python3 deepdive_v2.py plan session.json --queries '["query1","query2"]'
+
+# 3. Search (script fetches results)
+python3 deepdive_v2.py search session.json --fetch-top 3
+
+# 4. Reflect (Bobby identifies gaps)
+python3 deepdive_v2.py reflect session.json --reflection '{"gaps":["..."],"follow_up_queries":["..."],"confidence":0.6}'
+
+# 5. Repeat search/reflect until confidence ≥ 0.8 or max iterations
+
+# 6. Synthesize (Bobby writes final analysis)
+python3 deepdive_v2.py synthesize session.json --synthesis '{"summary":"...","sections":[...],"sources":[...]}'
+
+# 7. Render
+python3 deepdive_v2.py render session.json --format both
+
+# 8. Triangulate (check source quality)
+python3 deepdive_v2.py triangulate session.json
+```
+
+## Commands
+
+| Command | What it does |
+|---------|-------------|
+| `init` | Create a new research session |
+| `plan` | Record Bobby's query decomposition |
+| `search` | Execute Brave searches + fetch top pages |
+| `reflect` | Record gaps, follow-ups, confidence |
+| `synthesize` | Record final structured analysis |
+| `render` | Generate HTML + Markdown reports |
+| `triangulate` | Analyze source independence per section |
+| `status` | Print session state |
+
+## Features
+
+- **Iterative research** with confidence-based stopping (default: 0.8)
+- **URL deduplication** across iterations
+- **Source triangulation** scoring (strong/moderate/weak per section)
+- **Session persistence** — JSON state files for pause/resume
+- **Dark-themed HTML** reports with research methodology trail
+- **Zero dependencies** — pure Python stdlib
+- **Zero cost** — uses Bobby's native search + reasoning
+
+## Output
+
+Reports include:
+- Executive summary
+- Structured sections with findings + evidence
+- Source list with relevance notes
+- Research methodology trail (queries per iteration)
+- Open questions for further investigation
 
 ## Architecture
 
 ```
-Bobby (Agent)              deepdive_v2.py (Script)
-─────────────              ──────────────────────────
-Decompose question    →    init (create session)
-Decide sub-queries    →    plan (record queries)
-                      ←    search (execute + fetch)
-Analyze results       →    reflect (gaps + follow-ups)
-                      ←    search (iteration 2+)
-Analyze deeper        →    reflect (confidence check)
-Write final report    →    synthesize (record analysis)
-                      →    render (HTML + Markdown)
+Bobby (LLM)          deepdive_v2.py (I/O)
+    │                      │
+    ├─ decides queries ───→ plan
+    │                      │
+    │  ←── search results ─ search (Brave API + fetch)
+    │                      │
+    ├─ identifies gaps ───→ reflect
+    │                      │
+    │  (loop if confidence < 0.8)
+    │                      │
+    ├─ writes synthesis ──→ synthesize
+    │                      │
+    │  ←── HTML + MD ────── render
 ```
 
-**Zero LLM SDK calls in scripts.** All reasoning is Bobby. Scripts handle I/O only.
-
-## Usage
-
-```bash
-# v2 (recommended): Bobby-driven multi-step loop
-python3 deepdive_v2.py init "research question" --max-iterations 3
-python3 deepdive_v2.py plan <session.json> --queries '["q1","q2"]'
-python3 deepdive_v2.py search <session.json>
-python3 deepdive_v2.py reflect <session.json> --reflection '{"gaps":[...],"follow_up_queries":[...],"confidence":0.6}'
-python3 deepdive_v2.py search <session.json>  # iteration 2
-python3 deepdive_v2.py reflect <session.json> --reflection '{"confidence":0.85}'
-python3 deepdive_v2.py synthesize <session.json> --synthesis '{"summary":"...","sections":[...]}'
-python3 deepdive_v2.py render <session.json> --format both
-
-# v1: Quick single-pass
-python3 deepdive.py "question" --sub-queries '["q1","q2"]'
-```
-
-## Example Reports
-
-- **AI Compliance Training in Scandinavia (v2)** — 2 iterations, 8 queries, 12 sources. Found zero Nordic-specific AI compliance training providers.
-- **AI Compliance Training Landscape (v1)** — Single-pass competitive intel for HverdagsAI
-- **Open-Source AI Agent Frameworks 2026 (v1)** — Framework comparison
-
-## Built by Bobby
-A [Bobby's Place](https://github.com/robobobby) project — Bobby's autonomous R&D lab.
+Bobby does ALL reasoning. The script never calls an LLM.
